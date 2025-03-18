@@ -1,0 +1,81 @@
+import "./EventsDatatable.scss"
+import {DataGrid} from '@mui/x-data-grid';
+import React, {useEffect, useState} from "react";
+import Axios from "axios";
+import ConfirmModal from "../../Modal/ConfirmModal/ConfirmModal";
+import {Link} from "react-router-dom";
+
+const columns = [
+    {field: 'id', headerName: 'Id', width: 100},
+    {field: 'name', headerName: 'Name', width: 250},
+    {field: 'description', headerName: 'Description', width: 100},
+    {field: 'startTime', headerName: 'Start time', width: 200},
+    {field: 'picture', headerName: 'Picture', width: 150},
+    {field: 'eventType', headerName: 'Event type', width: 200},
+];
+
+export function EventsDatatable() {
+    const [url, setUrl] = useState("");
+
+    const [events, setEvents] = useState([]);
+
+    const [loaded, setLoaded] = useState(false);
+
+    const [showModal, setShowModal] = useState(false);
+
+
+    useEffect(() => {
+        if (loaded)
+            return;
+        Axios.get("https://localhost:7153/Events")
+            .then(
+                (res) => {
+                    setEvents(res?.data);
+                });
+        setLoaded(true);
+    })
+
+    const actionColumn = [
+        {
+            field: 'action',
+            headerName: 'Action',
+            width: 200,
+            renderCell: (params) => {
+                return (
+                    <div className="cellAction">
+                        <Link to={"/events/view/" + params.row.id} style={{textDecoration: "none"}}>
+                            <div className="viewButton">View</div>
+                        </Link>
+                        <Link to={"/events/edit/" + params.row.id} style={{textDecoration: "none"}}>
+                            <div className="editButton">Edit</div>
+                        </Link>
+                        <div className="deleteButton" onClick={() => {
+                            setShowModal(true);
+                            setUrl("https://localhost:7153/Events?id=" + params.row.id)
+                        }}>Delete
+                        </div>
+                    </div>
+                )
+            }
+        }
+    ]
+    return (
+        <div className="data">
+            <div className="datatable">
+                <DataGrid
+                    rows={events}
+                    columns={columns.concat(actionColumn)}
+                    pageSize={10}
+                    rowsPerPageOptions={[10]}
+                />
+            </div>
+            <ConfirmModal
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                text="Are you sure to delete event?"
+                url={url}
+                loaded={() => setLoaded(false)}
+            />
+        </div>
+    )
+}
